@@ -20,6 +20,7 @@ You're about to learn AI engineering across 200+ lessons using Python, TypeScrip
 
 Most people skip environment setup. Then they spend hours debugging import errors, version conflicts, and missing CUDA drivers. We're going to do this once, properly.
 
+
 ## The Concept
 
 An AI engineering environment has four layers:
