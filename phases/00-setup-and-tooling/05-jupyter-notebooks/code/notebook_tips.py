@@ -106,8 +106,16 @@ if __name__ == "__main__":
     print("Notebook Tips - Key Patterns\n")
     print("Run these in a Jupyter notebook to see rich output.\n")
 
-    timing_comparison()
-    inline_plotting()
-    dataframe_display()
-    memory_check()
-    magic_command_equivalents()
+    # %%
+    import notebook_tips  as tips
+    tips.timing_comparison()
+    # %%
+
+    tips.inline_plotting()
+    # %%
+    tips.dataframe_display()
+    # %%
+    tips.memory_check()
+    # %%
+    tips.magic_command_equivalents()
+

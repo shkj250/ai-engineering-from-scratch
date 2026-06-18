@@ -1,48 +1,75 @@
+
 import os
 import json
 import urllib.request
-
+from openai import OpenAI
 
 def call_with_sdk():
-    try:
-        import anthropic
-    except ImportError:
-        print("Install the SDK: pip install anthropic")
-        return
-
-    client = anthropic.Anthropic()
-    response = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=256,
-        messages=[{"role": "user", "content": "What is a neural network in one sentence?"}]
+    client = OpenAI(
+        api_key=os.environ.get('DEEPSEEK_API_KEY'),
+        base_url="https://api.deepseek.com"
     )
-    print(f"SDK response: {response.content[0].text}")
-    print(f"Tokens used: {response.usage.input_tokens} in, {response.usage.output_tokens} out")
 
+    response = client.chat.completions.create(
+    model="deepseek-v4-pro",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant"},
+        {"role": "user", "content": "Hello"},
+    ],
+    stream=False,
+    reasoning_effort="high",
+    extra_body={"thinking": {"type": "enabled"}}
+)
+
+    print(response.choices[0].message.content)
 
 def call_raw_http():
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    api_key = os.environ.get("DEEPSEEK_API_KEY")
     if not api_key:
-        print("Set ANTHROPIC_API_KEY environment variable first")
+        print("Set DEEPSEEK_API_KEY environment variable first")
         return
 
-    url = "https://api.anthropic.com/v1/messages"
+    url = "https://api.deepseek.com/chat/completions"
     headers = {
         "Content-Type": "application/json",
-        "x-api-key": api_key,
-        "anthropic-version": "2023-06-01",
+        "Authorization": f"Bearer {api_key}",
     }
-    body = json.dumps({
-        "model": "claude-sonnet-4-20250514",
-        "max_tokens": 256,
-        "messages": [{"role": "user", "content": "What is a neural network in one sentence?"}],
-    }).encode()
+    body = json.dumps(
+        {
+        "model": "deepseek-v4-flash",
+        "messages": [
+          {"role": "system", "content": "You are a helpful assistant."},
+          {"role": "user", "content": "Hello I am using the API!"}
+        ],
+        "thinking": {"type": "enabled"},
+        "reasoning_effort": "high",
+        "stream": False
+      }
+        ).encode()
 
     req = urllib.request.Request(url, data=body, headers=headers, method="POST")
-    with urllib.request.urlopen(req) as resp:
-        result = json.loads(resp.read())
-        print(f"Raw HTTP response: {result['content'][0]['text']}")
-        print(f"Tokens used: {result['usage']['input_tokens']} in, {result['usage']['output_tokens']} out")
+    try:
+        with urllib.request.urlopen(req) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+
+            print(f"Raw HTTP response: {result['choices'][0]['message']['content']}")
+
+            usage = result.get("usage", {})
+            print(
+                f"Tokens used: "
+                f"{usage.get('prompt_tokens')} in, "
+                f"{usage.get('completion_tokens')} out, "
+                f"{usage.get('total_tokens')} total"
+            )
+
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode("utf-8")
+        print(f"HTTP Error {e.code}: {error_body}")
+
+    except urllib.error.URLError as e:
+        print(f"Network Error: {e.reason}")
+
+
 
 
 if __name__ == "__main__":
